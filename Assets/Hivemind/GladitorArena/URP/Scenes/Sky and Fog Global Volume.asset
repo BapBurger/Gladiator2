@@ -195,7 +195,7 @@ MonoBehaviour:
     m_Value: 0.2
   smoothness:
     m_OverrideState: 1
-    m_Value: 0.2
+    m_Value: 0.702
   rounded:
     m_OverrideState: 1
     m_Value: 0
@@ -582,6 +582,7 @@ MonoBehaviour:
   m_Name: HDShadowSettings
   m_EditorClassIdentifier: 
   active: 1
+  interCascadeBorders: 1
   maxShadowDistance:
     m_OverrideState: 1
     m_Value: 150
@@ -787,9 +788,6 @@ MonoBehaviour:
   aerosolAnisotropy:
     m_OverrideState: 0
     m_Value: 0
-  numberOfBounces:
-    m_OverrideState: 0
-    m_Value: 3
   groundTint:
     m_OverrideState: 1
     m_Value: {r: 0.23584908, g: 0.23584908, b: 0.23584908, a: 1}
@@ -832,6 +830,9 @@ MonoBehaviour:
   horizonZenithShift:
     m_OverrideState: 0
     m_Value: 0
+  numberOfBounces:
+    m_OverrideState: 0
+    m_Value: 3
   m_SkyVersion: 1
   m_ObsoleteEarthPreset:
     m_OverrideState: 0
