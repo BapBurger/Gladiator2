@@ -1,27 +1,32 @@
 using UnityEngine;
 
-// ¡å ¿©±â ÀÌ¸§ÀÌ NewSword·Î ¹Ù²î¾î¾ß ÆÄÀÏ ÀÌ¸§°ú ¸ÅÄªµË´Ï´Ù!
+// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ï¿½ï¿½ NewSwordï¿½ï¿½ ï¿½Ù²ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ï¿½ï¿½ ï¿½ï¿½Äªï¿½Ë´Ï´ï¿½!
 public class NewSword : MonoBehaviour
 {
-    [Header("1. ÇÊ¼ö ¼³Á¤")]
-    public Transform handBone;        // RightHandAnchor (ÀÚµ¿À¸·Î Ã£À½)
-    public string handTag = "Player"; // ¼Õ¿¡ ´Þ¾ÆÁÙ ÅÂ±× ÀÌ¸§
+    [Header("1. ï¿½Ê¼ï¿½ ï¿½ï¿½ï¿½ï¿½")]
+    public Transform handBone;        // RightHandAnchor (ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ Ã£ï¿½ï¿½)
+    public string handTag = "Player"; // ï¿½Õ¿ï¿½ ï¿½Þ¾ï¿½ï¿½ï¿½ ï¿½Â±ï¿½ ï¿½Ì¸ï¿½
 
-    [Header("2. À§Ä¡/È¸Àü ¿ÀÇÁ¼Â")]
+    [Header("2. ï¿½ï¿½Ä¡/È¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½")]
     public Vector3 positionOffset;
     public Vector3 rotationOffset;
 
-    [Header("3. ¹°¸® ¼³Á¤")]
+    [Header("3. ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½")]
     public float throwThreshold = 2.0f;
     public float throwForceMultiplier = 1.2f;
-    public float airResistance = 0.95f;
-    public float returnGravity = 15.0f;
-    public float spinSpeed = 1500.0f;
+    public float airResistance = 0.98f;           // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+    public float gravityMultiplier = 1.0f;        // ï¿½ß·ï¿½ ï¿½ï¿½ï¿½ï¿½
+    public float returnForce = 5.0f;              // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Æ´ç¿¡ï¿½ï¿½ ï¿½ï¿½
+    public float returnForceDistance = 2.0f;      // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Æ´ç¿¡ï¿½ï¿½ ï¿½ï¿½ ï¿½Å·ï¿½ï¿½ï¿½ ï¿½Å¸ï¿½
+    public float spinSpeed = 720.0f;              // Yï¿½ï¿½ È¸ï¿½ï¿½ ï¿½Óµï¿½ (ï¿½ï¿½/ï¿½ï¿½)
     public float catchDistance = 0.5f;
 
-    [Header("ÇöÀç »óÅÂ (¼öÁ¤ X)")]
+    [Header("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Ç¥ï¿½ï¿½")]
+    [Tooltip("Ä®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½")]
     public bool isHeld = false;
+    [Tooltip("Ä®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½")]
     public bool isFlying = false;
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Óµï¿½")]
     public float currentHandSpeed = 0.0f;
 
     private Vector3 currentVelocity;
@@ -86,17 +91,31 @@ public class NewSword : MonoBehaviour
 
     void FlyAndReturn()
     {
+        // Yï¿½ï¿½ (ï¿½Ê·Ï»ï¿½ ï¿½ï¿½) ï¿½âº»ï¿½ï¿½ï¿½ï¿½ È¸ï¿½ï¿½
         transform.Rotate(Vector3.up * spinSpeed * Time.deltaTime, Space.Self);
 
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         currentVelocity *= airResistance;
+
+        // ï¿½ß·ï¿½ ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½ ï¿½Æ·ï¿½ï¿½ï¿½ (-Y ï¿½ï¿½ï¿½ï¿½)
+        currentVelocity += Physics.gravity * gravityMultiplier * Time.deltaTime;
+
+        // ï¿½ï¿½ï¿½Ú·ï¿½ ï¿½ï¿½ï¿½Æ´ç¿¡ï¿½ï¿½ ï¿½ï¿½ (ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+        Vector3 directionToHand = (handBone.position - transform.position);
+        float distance = directionToHand.magnitude;
+
+        // ï¿½Å¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ýºï¿½ï¿½Ï¿ï¿½ ï¿½ï¿½ï¿½Æ´ç¿¡ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Å¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        if (distance > returnForceDistance)
+        {
+            float returnStrength = Mathf.Pow(distance - returnForceDistance, 1.5f);
+            currentVelocity += directionToHand.normalized * returnForce * returnStrength * Time.deltaTime;
+        }
+
+        // ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
         transform.position += currentVelocity * Time.deltaTime;
 
-        Vector3 directionToHand = (handBone.position - transform.position).normalized;
-        float distance = Vector3.Distance(transform.position, handBone.position);
-
-        float dynamicGravity = returnGravity + (distance * 2.0f);
-        currentVelocity += directionToHand * dynamicGravity * Time.deltaTime;
-
+        // ï¿½Ù¾ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Úµï¿½ ï¿½ï¿½ï¿½ï¿½
         if (distance < catchDistance)
         {
             Grab();
