@@ -1,43 +1,60 @@
 using UnityEngine;
 
-// �� ���� �̸��� NewSword�� �ٲ��� ���� �̸��� ��Ī�˴ϴ�!
 public class NewSword : MonoBehaviour
 {
-    [Header("1. �ʼ� ����")]
-    public Transform handBone;        // RightHandAnchor (�ڵ����� ã��)
-    public string handTag = "Player"; // �տ� �޾��� �±� �̸�
+    [Header("1. Required References")]
+    public Transform handBone;        // RightHandAnchor (auto-detected)
+    public string handTag = "Player"; // Tag name for hand detection
 
-    [Header("2. ��ġ/ȸ�� ������")]
+    [Header("2. Position/Rotation Offset")]
     public Vector3 positionOffset;
     public Vector3 rotationOffset;
 
-    [Header("3. ���� ����")]
+    [Header("3. Throwing Parameters")]
     public float throwThreshold = 2.0f;
     public float throwForceMultiplier = 1.2f;
-    public float airResistance = 0.98f;           // ���� ����
-    public float gravityMultiplier = 1.0f;        // �߷� ����
-    public float returnForce = 5.0f;              // ���� ���ƴ翡�� ��
-    public float returnForceDistance = 2.0f;      // ���� ���ƴ翡�� �� �ŷ��� �Ÿ�
-    public float spinSpeed = 720.0f;              // Y�� ȸ�� �ӵ� (��/��)
+    public float airResistance = 0.98f;           // Air drag
+    public float gravityMultiplier = 1.0f;        // Gravity strength
+    public float returnForce = 5.0f;              // Force pulling back to hand
+    public float returnForceDistance = 2.0f;      // Distance threshold for return force
+    public float spinSpeed = 720.0f;              // Y-axis rotation speed (degrees/sec)
     public float catchDistance = 0.5f;
 
-    [Header("���� ���� ǥ��")]
-    [Tooltip("Į�� ���� �ִ� ����")]
+    [Header("State Display (Read-Only)")]
+    [Tooltip("Is the knife currently held in hand")]
     public bool isHeld = false;
-    [Tooltip("Į�� ���� ���� �ִ� ����")]
+    [Tooltip("Is the knife currently flying through air")]
     public bool isFlying = false;
-    [Tooltip("���� ���� �ӵ�")]
+    [Tooltip("Current hand movement speed")]
     public float currentHandSpeed = 0.0f;
 
+    private Rigidbody rb;
     private Vector3 currentVelocity;
     private Vector3 lastHandPosition;
     private Vector3 handVelocity;
+    private bool initialized = false;
 
     void Start()
     {
+        rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;  // Disable physics, we control it manually
+            rb.useGravity = false;
+        }
+
         isHeld = false;
         isFlying = false;
-        if (handBone == null) FindHandBone();
+
+        if (handBone == null)
+        {
+            FindHandBone();
+        }
+
+        if (handBone != null)
+        {
+            lastHandPosition = handBone.position;
+        }
     }
 
     void Update()
@@ -48,6 +65,16 @@ public class NewSword : MonoBehaviour
             return;
         }
 
+        // Initialize by attaching to hand after first frame
+        if (!initialized && handBone != null)
+        {
+            initialized = true;
+            Grab();  // Auto-attach to hand on start
+            lastHandPosition = handBone.position;
+            return;
+        }
+
+        // Calculate hand velocity
         handVelocity = (handBone.position - lastHandPosition) / Time.deltaTime;
         currentHandSpeed = handVelocity.magnitude;
         lastHandPosition = handBone.position;
@@ -55,6 +82,8 @@ public class NewSword : MonoBehaviour
         if (isHeld)
         {
             StickToHand();
+
+            // Throw detection
             if (currentHandSpeed > throwThreshold)
             {
                 Throw(handVelocity);
@@ -91,31 +120,31 @@ public class NewSword : MonoBehaviour
 
     void FlyAndReturn()
     {
-        // Y�� (�ʷϻ� ��) �⺻���� ȸ��
+        // Rotate around Y-axis (green axis)
         transform.Rotate(Vector3.up * spinSpeed * Time.deltaTime, Space.Self);
 
-        // ���� ����
+        // Apply air resistance
         currentVelocity *= airResistance;
 
-        // �߷� ����: ���� �Ʒ��� (-Y ����)
+        // Apply gravity: downward force (-Y direction)
         currentVelocity += Physics.gravity * gravityMultiplier * Time.deltaTime;
 
-        // ���ڷ� ���ƴ翡�� �� (��ġ�� ����)
+        // Return force to hand (spring-like behavior)
         Vector3 directionToHand = (handBone.position - transform.position);
         float distance = directionToHand.magnitude;
 
-        // �Ÿ��� ���� �ݺ��Ͽ� ���ƴ翡�� �� ����
-        // ����� �Ÿ��� ������ ���� ���� ����
+        // Apply return force based on distance
+        // Only pull when beyond certain distance
         if (distance > returnForceDistance)
         {
             float returnStrength = Mathf.Pow(distance - returnForceDistance, 1.5f);
             currentVelocity += directionToHand.normalized * returnForce * returnStrength * Time.deltaTime;
         }
 
-        // ��ġ ������Ʈ
+        // Update position
         transform.position += currentVelocity * Time.deltaTime;
 
-        // �پ� ������ �ڵ� ����
+        // Auto-catch when close enough
         if (distance < catchDistance)
         {
             Grab();
