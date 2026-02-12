@@ -13,8 +13,6 @@ public class VerticalTossSword : MonoBehaviour
 
     [Header("3. 복귀 및 자동 잡기 설정")]
     public float returnPower = 15.0f;    // 손으로 돌아오는 속도
-
-    // ★ 새로 추가됨: 자동 잡기 거리 조절 (0.05m ~ 1.0m)
     [Range(0.05f, 1.0f)]
     public float autoCatchDistance = 0.2f;
 
@@ -25,6 +23,10 @@ public class VerticalTossSword : MonoBehaviour
     [Header("5. 감도 설정")]
     [Range(0, 1)] public float grabThreshold = 0.8f;   // 잡는 기준 (장전 기준)
     [Range(0, 1)] public float releaseThreshold = 0.3f; // 놓는 기준 (발사 기준)
+
+    // ★ 새로 추가됨: 상태 확인용 변수 (인스펙터에서 보임)
+    [Header("6. 상태 모니터링 (Debug)")]
+    public string currentStatus = "Initialized";
 
     // 내부 변수
     private bool isHeld = false;
@@ -42,6 +44,8 @@ public class VerticalTossSword : MonoBehaviour
         isReadyToLaunch = false;
         isPerforming = false;
         swordRb.isKinematic = false;
+
+        UpdateStatus("Ready (Not Held)"); // 시작 상태
     }
 
     void Update()
@@ -84,15 +88,13 @@ public class VerticalTossSword : MonoBehaviour
                 ReturnToHand();
             }
 
-            // ★ 수정됨: 거리 체크에 autoCatchDistance 변수 사용
             // 퍼포먼스 중에도 손을 뻗어 잡으면 즉시 잡히게 (인터셉트)
             if (distance < autoCatchDistance && currentGripStrength > grabThreshold)
             {
                 Grab();
             }
 
-            // ★ 수정됨: 자동 잡기 로직 (Auto Catch)
-            // 조건: 거리 내 진입 + 발사 직후 아님(0.5초 지남)
+            // 자동 잡기 로직 (Auto Catch)
             if (distance < autoCatchDistance && flightTimer > 0.5f)
             {
                 Grab();
@@ -103,7 +105,6 @@ public class VerticalTossSword : MonoBehaviour
         // ---------------------------------------------------------
         else
         {
-            // ★ 수정됨: 거리 체크에 autoCatchDistance 변수 사용
             if (distance < autoCatchDistance)
             {
                 if (!isPerforming || currentGripStrength > grabThreshold)
@@ -114,8 +115,21 @@ public class VerticalTossSword : MonoBehaviour
         }
     }
 
+    // ★ 상태 업데이트용 헬퍼 함수
+    void UpdateStatus(string newStatus)
+    {
+        currentStatus = newStatus;
+        // Debug.Log($"[Sword Status] {currentStatus}"); // 콘솔에 로그 찍기
+    }
+
     void Grab()
     {
+        if (!isHeld) // 이미 잡고 있지 않을 때만 로그 출력 (중복 방지)
+        {
+            UpdateStatus("Attached (Held)"); // ★ 상태 변경: 붙음
+            Debug.Log("칼이 손에 붙었습니다!");
+        }
+
         isHeld = true;
         isPerforming = false;
         isReadyToLaunch = false; // 안전장치 ON
@@ -124,12 +138,13 @@ public class VerticalTossSword : MonoBehaviour
         swordRb.useGravity = false;
         swordRb.velocity = Vector3.zero;
         swordRb.angularVelocity = Vector3.zero;
-
-        // Debug.Log("⚔️ 잡았다!");
     }
 
     void StartPerformance()
     {
+        UpdateStatus("Detached (Flying)"); // ★ 상태 변경: 떨어짐
+        Debug.Log("칼이 손에서 떨어져 날아갑니다!");
+
         isHeld = false;
         isPerforming = true;
         isReadyToLaunch = false;
@@ -155,12 +170,16 @@ public class VerticalTossSword : MonoBehaviour
         float angularSpeed = totalRadians / totalFlightTime;
 
         swordRb.angularVelocity = transform.up * angularSpeed;
-
-        Debug.Log($"🚀 퍼포먼스 시작! (자동 잡기 거리: {autoCatchDistance}m)");
     }
 
     void ReturnToHand()
     {
+        // 돌아오기 시작할 때 상태 업데이트 (선택 사항)
+        if (currentStatus != "Returning")
+        {
+            UpdateStatus("Returning");
+        }
+
         swordRb.useGravity = false;
 
         Vector3 directionToHand = (rightHand.transform.position - transform.position).normalized;
